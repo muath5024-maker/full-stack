@@ -4,3 +4,5 @@ __pycache__/
 .env
 .vite/
 *.log
+# Ignore worker env files with secrets
+/workers/.env

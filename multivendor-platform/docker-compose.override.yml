@@ -2,3 +2,13 @@ services:
   fastapi:
     ports:
       - "8001:8000"
+    environment:
+      - VIRTUAL_HOST=chat.mbuy.pro
+      - VIRTUAL_PORT=8000
+  gpt-oss-vllm:
+    image: ai/gpt-oss-vllm:latest
+    ports:
+      - "9002:9002"
+    environment:
+      - CREWAI_API_KEY=${CREWAI_API_KEY}
+      - CREWAI_HOST=${CREWAI_HOST}

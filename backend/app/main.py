@@ -1,46 +1,37 @@
-from fastapi import FastAPI, WebSocket, Depends
-from fastapi.middleware.cors import CORSMiddleware
-from contextlib import asynccontextmanager
-import redis.asyncio as redis
 import os
+from contextlib import asynccontextmanager
 
-# Note: These modules exist but are currently empty.
-# They in turn need to define 'router'.
+from fastapi import FastAPI, WebSocket
+from fastapi.middleware.cors import CORSMiddleware
+import redis.asyncio as aioredis
+import docker
+try:
+    from groq import Groq
+except Exception:
+    Groq = None
+
 from app.api import auth, sellers, buyers, products, orders
 from app.websockets import notifications
-# Note: services/supabase.py does not exist yet.
-# from app.services.supabase import get_supabase
-
-# Mocking get_supabase for now to allow file to be written without immediate runtime import error if we were running it,
-# but strictly following the user code requires the import.
-# I will use the user's code exactly, but commented out if the file doesn't exist?
-# No, "Execution Phase" says "Execute commands ... Strict adherence". 
-# But if strict adherence breaks the "Testing" phase immediately...
-# "Requirement Check" happens AFTER execution.
-
-# So I write EXACTLY what user gave.
-from app.api import auth, sellers, buyers, products, orders
-from app.websockets import notifications
-# The user's code imports 'get_supabase' from 'app.services.supabase'
-# I must ensure the file services/supabase.py exists or creating main.py is fine (it's just text),
-# but running it will fail.
 from app.services.supabase import get_supabase
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup
-    app.state.redis = redis.from_url(os.getenv("REDIS_URL"))
+    # Startup: initialize redis and supabase clients from environment
+    redis_url = os.getenv("REDIS_URL", "redis://redis:6379")
+    app.state.redis = aioredis.from_url(redis_url)
     app.state.supabase = get_supabase()
     yield
     # Shutdown
     await app.state.redis.close()
 
+
 app = FastAPI(lifespan=lifespan)
 
-# CORS
+# CORS (adjust origins for production)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://your-domain.pages.dev", "http://localhost:3000"],
+    allow_origins=["http://localhost:5173", "http://localhost:3000"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -52,10 +43,34 @@ app.include_router(sellers.router, prefix="/api/sellers", tags=["sellers"])
 app.include_router(buyers.router, prefix="/api/buyers", tags=["buyers"])
 app.include_router(products.router, prefix="/api/products", tags=["products"])
 app.include_router(orders.router, prefix="/api/orders", tags=["orders"])
-
-# WebSocket
 app.include_router(notifications.router)
+from app.api.ai_proxy import router as ai_proxy_router
+app.include_router(ai_proxy_router, prefix="/api/ai", tags=["ai"])
+
 
 @app.get("/")
 async def root():
     return {"message": "Multi-Vendor Platform API"}
+
+
+# Initialize Groq and Docker client; read API key from environment
+GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+groq_client = None
+if Groq and GROQ_API_KEY:
+    groq_client = Groq(api_key=GROQ_API_KEY)
+docker_client = docker.from_env()
+
+
+@app.websocket("/ws/chat")
+async def chat_endpoint(websocket: WebSocket):
+    await websocket.accept()
+    try:
+        while True:
+            data = await websocket.receive_text()
+            if groq_client:
+                response = groq_client.query(data)
+            else:
+                response = "(missing GROQ_API_KEY)"
+            await websocket.send_text(f"Response: {response}")
+    except Exception:
+        await websocket.close()

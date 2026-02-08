@@ -3,8 +3,9 @@ services:
     build: ./backend
     ports:
       - "8000:8000"
+    # Load sensitive env from the workers folder (workers/.env)
     env_file:
-      - .env
+      - ../workers/.env
     volumes:
       - ./backend:/app
     depends_on:
@@ -36,11 +37,38 @@ services:
       - "9000:9000"
       - "9001:9001"
     environment:
-      MINIO_ROOT_USER: minioadmin
-      MINIO_ROOT_PASSWORD: minioadmin
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
     volumes:
       - minio_data:/data
     command: server /data --console-address ":9001"
+
+  worker-ai:
+    build: ../workers
+    working_dir: /app/workers
+    ports:
+      - "9001:9001"
+    env_file:
+      - ../workers/.env
+    command: python ai_worker.py
+
+  worker-media:
+    build: ../workers
+    working_dir: /app/workers
+    ports:
+      - "9002:9002"
+    env_file:
+      - ../workers/.env
+    command: python media_worker.py
+
+  worker-deploy:
+    build: ../workers
+    working_dir: /app/workers
+    ports:
+      - "9003:9003"
+    env_file:
+      - ../workers/.env
+    command: python deploy_worker.py
 
 volumes:
   redis_data:
