@@ -1,3 +1,5 @@
+"use client";
+
 import { useEffect, useState } from 'react';
 import { getSubdomainInfo, fetchStoreData } from '@/utils/subdomain';
 
@@ -5,7 +7,13 @@ import { getSubdomainInfo, fetchStoreData } from '@/utils/subdomain';
  * Hook للتعامل مع الدومينات الفرعية
  */
 export function useSubdomain() {
-  const [subdomainInfo, setSubdomainInfo] = useState(getSubdomainInfo());
+  const [subdomainInfo, setSubdomainInfo] = useState<ReturnType<typeof getSubdomainInfo>>({
+    isSubdomain: false,
+    subdomain: null,
+    storeName: null,
+    isMainDomain: true,
+    fullDomain: '',
+  });
   const [storeData, setStoreData] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);

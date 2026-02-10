@@ -1,3 +1,5 @@
+"use client";
+
 import type { ProjectType } from '@/types/project';
 import { Card, CardContent } from '@/components/ui/card';
 import { ShoppingBag, Smartphone, Globe, Database, Link } from 'lucide-react';

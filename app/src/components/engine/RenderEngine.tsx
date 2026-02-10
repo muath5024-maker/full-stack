@@ -1,5 +1,7 @@
+"use client";
+
 import type { ProjectConfig } from '@/types/project';
-import StorePage from '@/pages/StorePage';
+import StorePage from '@/views/StorePage';
 import Navigation from '@/sections/Navigation';
 import Hero from '@/sections/Hero';
 import About from '@/sections/About';

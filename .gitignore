@@ -1,8 +1,11 @@
 node_modules/
+dist/
+.next/
+.vite/
 __pycache__/
 *.pyc
 .env
-.vite/
 *.log
+
 # Ignore worker env files with secrets
 /workers/.env

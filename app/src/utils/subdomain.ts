@@ -1,3 +1,5 @@
+"use client";
+
 /**
  * Subdomain utility functions
  * التعامل مع الدومينات الفرعية الديناميكية
@@ -15,6 +17,17 @@ export interface SubdomainInfo {
  * استخراج معلومات الدومين الفرعي من URL
  */
 export function getSubdomainInfo(): SubdomainInfo {
+  // Guard for SSR (Next.js server-side rendering)
+  if (typeof window === 'undefined') {
+    return {
+      isSubdomain: false,
+      subdomain: null,
+      storeName: null,
+      isMainDomain: true,
+      fullDomain: '',
+    };
+  }
+
   const hostname = window.location.hostname;
   const parts = hostname.split('.');
 
@@ -23,7 +36,7 @@ export function getSubdomainInfo(): SubdomainInfo {
     // يمكن اختبار باستخدام: localhost:5173?store=ahmed
     const urlParams = new URLSearchParams(window.location.search);
     const storeParam = urlParams.get('store');
-    
+
     return {
       isSubdomain: !!storeParam,
       subdomain: storeParam,
@@ -59,10 +72,10 @@ export function getSubdomainInfo(): SubdomainInfo {
   // دومين فرعي: store1.mbuy.pro أو dashboard.mbuy.pro
   if (parts.length >= 3) {
     const subdomain = parts[0];
-    
+
     // استثناءات (دومينات خاصة - ليست متاجر)
     const specialSubdomains = ['www', 'dashboard', 'admin', 'api', 'app'];
-    
+
     if (specialSubdomains.includes(subdomain)) {
       return {
         isSubdomain: false,
@@ -99,7 +112,7 @@ export async function fetchStoreData(storeName: string) {
   try {
     // استبدل هذا بـ API الخاص بك
     const response = await fetch(`https://api.mbuy.pro/stores/${storeName}`);
-    
+
     if (!response.ok) {
       throw new Error('Store not found');
     }
@@ -117,7 +130,7 @@ export async function fetchStoreData(storeName: string) {
 export function isValidStoreName(name: string): boolean {
   // فقط أحرف، أرقام، وشرطة
   const pattern = /^[a-z0-9-]+$/;
-  
+
   // الطول بين 3-30 حرف
   if (name.length < 3 || name.length > 30) {
     return false;
@@ -130,10 +143,10 @@ export function isValidStoreName(name: string): boolean {
  * توليد رابط المتجر
  */
 export function generateStoreUrl(storeName: string): string {
-  const isDev = import.meta.env.DEV;
-  
+  const isDev = process.env.NODE_ENV !== 'production';
+
   if (isDev) {
-    return `http://localhost:5173?store=${storeName}`;
+    return `http://localhost:3000?store=${storeName}`;
   }
 
   return `https://${storeName}.mbuy.pro`;
@@ -151,10 +164,10 @@ export function navigateToStore(storeName: string) {
  * الانتقال للدومين الرئيسي
  */
 export function navigateToMainSite() {
-  const isDev = import.meta.env.DEV;
-  
+  const isDev = process.env.NODE_ENV !== 'production';
+
   if (isDev) {
-    window.location.href = 'http://localhost:5173';
+    window.location.href = 'http://localhost:3000';
   } else {
     window.location.href = 'https://mbuy.pro';
   }
