@@ -22,34 +22,31 @@
 
 | الطبقة (Layer) | التقنية (Technology) | المهارات المطلوبة (Required Skills) | ملاحظات هامة |
 | :--- | :--- | :--- | :--- |
-| **الواجهة الأمامية**<br>(Frontend) | **React 19 + Vite**<br>TypeScript<br>Tailwind CSS (Shadcn/UI)<br>GSAP / Three.js | - إدارة الحالة المتقدمة (Zustand/TanStack Query)<br>- تحسين الأداء (Memoization, Lazy Loading)<br>- بناء واجهات ديناميكية (Server Driven UI) | الواجهة ضخمة جداً؛ يجب تقسيمها إلى موديولات (Micro-Frontends) منطقية داخل نفس الـ Repo. |
-| **البوابة الخلفية**<br>(API Gateway) | **FastAPI (Python)** | - Async programming<br>- Pydantic Models<br>- Authentication (OAuth2/JWT)<br>- Rate Limiting | هذه هي النقطة الوحيدة التي تتحدث معها الواجهة الأمامية. ممنوع الاتصال المباشر بقاعدة البيانات. |
-| **الذكاء والعمال**<br>(AI & Workers) | **CrewAI + Python**<br>LangChain<br>Redis (Queue) | - Prompt Engineering<br>- Agent Orchestration<br>- Python Scripting<br>- Docker Operations | العمال يعملون في الخلفية (Asynchronous). لا تنتظر الرد منهم مباشرة. |
+| **الواجهة والخادم**<br>(Full-Stack) | **Next.js 15** (App Router)<br>TypeScript<br>Tailwind CSS (shadcn/ui)<br>GSAP | - Server Components & Client Components<br>- App Router & Layouts<br>- API Routes<br>- بناء واجهات ديناميكية (Server Driven UI) | Next.js يوفر حلاً متكاملاً للواجهة والـ API في مشروع واحد. |
 | **قاعدة البيانات**<br>(Data Layer) | **PostgreSQL**<br>(Supabase) | - Database Design (Normalization)<br>- SQL Optimization<br>- JSONB fields (للبيانات المرنة) | قاعدة البيانات ستكون ضخمة. يجب تصميم الجداول بعناية فائقة (Indexes, FKs). |
-| **البنية التحتية**<br>(DevOps) | **Docker**<br>Cloudflare<br>GitHub Actions | - Containerization<br>- CI/CD Pipelines<br>- DNS & Networking | النظام يجب أن يكون قابلاً للنشر بضغطة زر (One-Click Deploy). |
+| **البنية التحتية**<br>(DevOps) | **Vercel / Cloudflare**<br>GitHub Actions | - CI/CD Pipelines<br>- DNS & Networking<br>- Edge Functions | النظام يجب أن يكون قابلاً للنشر بضغطة زر (One-Click Deploy). |
 
 ---
 
 ## 3. هيكلية المشروع (Project Architecture)
 
-النظام يتبع معمارية **Modular Monolith** مدعومة بـ **Event-Driven Architecture** للمهام الخلفية.
+النظام يعتمد على **Next.js 15 App Router** كإطار عمل موحد.
 
 ### المخطط العام:
 ```mermaid
 graph TD
-    Client[Client Browser / Mobile] -->|HTTPS/JSON| Gateway[FastAPI Gateway]
-    
-    subgraph "The Core (Python)"
-        Gateway -->|Auth & Validate| ServiceLayer[Service Logic]
-        ServiceLayer -->|Query| DB[(Massive PostgreSQL)]
-        ServiceLayer -->|Task| Redis[Redis Queue]
+    Client[Client Browser / Mobile] -->|HTTPS| NextJS[Next.js App]
+
+    subgraph "Next.js 15 Application"
+        NextJS -->|Server Components| SSR[Server-Side Rendering]
+        NextJS -->|API Routes| APILayer[API Layer]
+        APILayer -->|Query| DB[(PostgreSQL / Supabase)]
+        SSR -->|Data Fetch| DB
     end
-    
-    subgraph "AI Workforce"
-        Redis -->|Consume| Worker1[Architect Agent]
-        Redis -->|Consume| Worker2[Coder Agent]
-        Redis -->|Consume| Worker3[Deployer Agent]
-        Worker2 -->|Write| FileSys[FileSystem / R2]
+
+    subgraph "External Services"
+        APILayer -->|AI Requests| AI[AI APIs (Gemini/etc)]
+        APILayer -->|Storage| R2[Cloudflare R2]
     end
 ```
 
@@ -70,14 +67,14 @@ graph TD
 ## 5. خارطة الطريق ومراحل التنفيذ (Roadmap)
 
 ### المرحلة 1: التأسيس (The Core Foundation)
-*   [ ] إعداد PostgreSQL بتصميم Schema شامل.
-*   [ ] بناء FastAPI Gateway مع نظام المصادقة (Auth).
-*   [ ] إعداد الهيكل الأساسي للواجهة (Router & Layouts) للتبويبات الجديدة.
+*   [ ] إعداد Next.js 15 مع App Router والتصميم الأساسي. ✅
+*   [ ] إعداد Supabase (Auth + Database).
+*   [ ] إعداد الهيكل الأساسي للصفحات (Router & Layouts) للتبويبات.
 
 ### المرحلة 2: محرك البناء (The Factory Engine)
-*   [ ] برمجة وكلاء بناء الكود (Coder & Reviewer Agents).
-*   [ ] إعداد خطوط الإنتاج (Pipelines) لبناء React و FastAPI.
-*   [ ] ربط الـ Wizard بالـ Backend.
+*   [ ] برمجة واجهة المعالج (Wizard) لإنشاء المشاريع.
+*   [ ] ربط AI APIs لتوليد الكود والمحتوى.
+*   [ ] API Routes لمعالجة الطلبات.
 
 ### المرحلة 3: السوق والاستوديو (Market & Studio)
 *   [ ] بناء نظام تعدد البائعين (Vendor Dashboard).
@@ -85,16 +82,17 @@ graph TD
 *   [ ] دمج بوابات الدفع والمحافظ.
 
 ### المرحلة 4: الأتمتة والتشغيل (Ops & Scale)
-*   [ ] أتمتة النشر على Cloudflare/Vercel.
+*   [ ] أتمتة النشر على Vercel/Cloudflare.
 *   [ ] إعداد نظام المراقبة (Monitoring) والسجلات.
 
 ---
 
 ## 6. قواعد العمل (Development Rules)
-1.  **Source of Truth:** قاعدة البيانات هي المصدر الوحيد للحقيقة. لا تعتمد على الـ Frontend State في الأمور الحساسة.
-2.  **Strict Typing:** يجب استخدام TypeScript في الواجهة و Pydantic في الباك اند بصرامة.
-3.  **Security First:** كل API Endpoint يجب أن تتحقق من الصلاحيات.
-4.  **Documentation:** أي ميزة جديدة يجب توثيقها في هذا المجلد قبل كتابة الكود.
+1.  **Source of Truth:** قاعدة البيانات هي المصدر الوحيد للحقيقة. لا تعتمد على الـ Client State في الأمور الحساسة.
+2.  **Strict Typing:** يجب استخدام TypeScript بصرامة في جميع أنحاء المشروع.
+3.  **Security First:** كل API Route يجب أن تتحقق من الصلاحيات.
+4.  **Server Components First:** استخدم Server Components افتراضياً، و `"use client"` فقط عند الضرورة.
+5.  **Documentation:** أي ميزة جديدة يجب توثيقها في هذا المجلد قبل كتابة الكود.
 
 ---
-*تم التحديث بتاريخ: 2026-02-06*
+*تم التحديث بتاريخ: 2026-02-11 — الانتقال الكامل إلى Next.js 15*

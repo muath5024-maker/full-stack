@@ -1,38 +1,37 @@
-# API Reference — Gateway ↔ Workers
+# API Reference — Next.js API Routes
 
-هذا الملف يوضّح الواجهات بين الـ API Gateway (FastAPI) وWorkers المتخصصة.
+هذا الملف يوضّح واجهات الـ API المتاحة في التطبيق عبر Next.js API Routes.
 
 ## 1. Flow العام
-- Frontend يتصل بالـ Gateway عبر HTTPS.
-- Gateway يتحقق من المصادقة/الصلاحية ثم يستدعي الـ Worker المناسب داخل الشبكة الداخلية.
+- Client Components تتصل بالـ API Routes عبر `fetch` أو Server Actions.
+- API Routes تتحقق من المصادقة/الصلاحية ثم تستدعي الخدمات الخارجية.
+- Server Components يمكنها الوصول مباشرة لـ Supabase بدون API Routes.
 
-## 2. Endpoints
+## 2. Endpoints (مقترحة)
 
-### AI Proxy
-- Path (Gateway): `POST /api/ai/generate`
+### AI Generation
+- Path: `POST /api/ai/generate`
   - Body: `{ "prompt": string, "options": object }`
-  - Behavior: Gateway يعيد توجيه الطلب إلى `worker-ai` على `/internal/ai/generate`.
-  - Response: يمرر Gateway نفس استجابة الـ Worker (JSON).
+  - Behavior: يستدعي AI API (Gemini/etc) ويعيد النتيجة.
+  - Response: JSON.
 
-### Media Proxy (example)
-- Path (Gateway): `POST /api/media/process`
-  - Gateway يجب أن تمرر ملف multipart إلى `worker-media` `/internal/media/process`.
+### Media Processing (مستقبلي)
+- Path: `POST /api/media/process`
+  - يعالج ملف multipart ويرفعه لـ Cloudflare R2.
 
-### Deploy Proxy (example)
-- Path (Gateway): `POST /api/deploy/run`
-  - Body: `{ "repo_url": string, "ref": string }`
-  - Gateway يعيد توجيه الطلب إلى `worker-deploy` `/internal/deploy/run`.
+### Project Configuration
+- Path: `POST /api/project/create`
+  - Body: `{ "type": string, "template": string, "features": string[] }`
+  - يُنشئ تكوين مشروع جديد ويحفظه في Supabase.
 
-## 3. الشبكة والأمان
-- اعتماد: Workers تعمل داخل شبكة داخلية (Docker network). استخدم أسماء الخدمات (`worker-ai`) كـ host داخل docker-compose.
-- Authentication: Gateway يتحقق من JWT/session قبل أي مكالمة لWorkers.
-- Authorization between Gateway and Workers:
-  - خيار بسيط: استخدام header سري داخلي `X-Internal-Token` (يقرأ من `workers/.env`) ويحققه الـ worker.
-  - خيار أقوى: Gateway يصدر JWT مخصوصاً للـ Worker ويتحقق العامل من توقيع JWT.
+## 3. الأمان
+- Authentication: Next.js Middleware يتحقق من Supabase session.
+- Authorization: RBAC على مستوى كل API Route.
+- Rate Limiting: عبر Middleware أو خدمة خارجية.
 
-## 4. Error handling
-- Gateway يجب أن يعيد 502 Bad Gateway عند فشل الاتصال بالـ Worker.
-- Gateway يمكنه تنفيذ retry بسيط (1 retry) قبل إرجاع الخطأ.
+## 4. Error Handling
+- API Routes تعيد HTTP status codes مناسبة (400, 401, 403, 500).
+- JSON response موحد: `{ "error": string, "details"?: object }`.
 
 ## 5. JSON الناتج للعميل (مثال `project config`)
 ```json
@@ -41,6 +40,9 @@
   "template": "landing-basic",
   "features": ["auth","payments"],
   "assets": {"logo":"/storage/logo.png"},
-  "deployment": {"method":"docker-compose"}
+  "deployment": {"method":"vercel"}
 }
 ```
+
+---
+*تم التحديث: 2026-02-11*

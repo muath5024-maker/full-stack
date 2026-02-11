@@ -1,30 +1,16 @@
 # وثيقة العمارة البرمجية (System Architecture)
 
-بناءً على التوجيهات الاستراتيجية، تم اعتماد هيكلية تعتمد على **فصل المهام (Separation of Concerns)** لضمان الأداء العالي، الأمان، وقابلية التوسع.
+بناءً على التوجيهات الاستراتيجية، تم اعتماد هيكلية تعتمد على **Next.js 15** كإطار عمل موحد للواجهة الأمامية والخلفية.
 
 ## 1. المكدس التقني (Tech Stack)
 
-### الواجهة الأمامية (Frontend Layer)
-*   **الإطار:** React 19 + Vite.
+### الإطار الرئيسي (Core Framework)
+*   **الإطار:** Next.js 15 (App Router).
 *   **اللغة:** TypeScript.
-*   **الاستضافة:** Cloudflare Pages (Global CDN).
+*   **الاستضافة:** Vercel / Cloudflare Pages (Global CDN).
 *   **المكونات:** shadcn/ui (Radix UI + Tailwind CSS).
-*   **إدارة الحالة:** Supabase Realtime (للشرائط التقدم والإشعارات).
-*   **المحرر:** Tiptap (لكتابة الكود/المحتوى).
-
-### البوابة الخلفية (API Gateway Layer)
-*   **الإطار:** FastAPI (Python).
-*   **الوظيفة:**
-    *   نقطة الدخول الموحدة (Gateway).
-    *   مُصادقة المستخدمين (Auth Guard).
-    *   إدارة طوابير الانتظار (Rate Limiting & Queuing).
-*   **الاستضافة:** (مبدئياً Local/Docker، مستقبلاً Cloud Run أو مشابه).
-
-### طبقة العمال والذكاء (Worker / Agentic Layer) - "القلب"
-*   **اللغة:** Python.
-*   **المحرك:** CrewAI + Google Gemini API.
-*   **إدارة المهام الخلفية:** Trigger.dev (بديل Celery الحديث).
-*   **الوظيفة:** تنفيذ سلاسل التفكير، توليد الكود، اتخاذ القرارات.
+*   **الحركة والتأثيرات:** GSAP + @gsap/react.
+*   **الأيقونات:** Lucide React.
 
 ### طبقة البيانات والتخزين (Data & Storage Layer)
 *   **البيانات العلائقية:** Supabase (PostgreSQL) - لتخزين المستخدمين، المشاريع، والبيانات النصية.
@@ -36,31 +22,39 @@
 *   **الإشعارات:** Firebase Cloud Messaging (FCM).
 *   **المراقبة:** لوحة تحكم إدارية (Admin Dashboard) مخصصة.
 
-## 2. هيكلية المجلدات المقترحة (Project Structure)
+## 2. هيكلية المجلدات (Project Structure)
 
 ```text
 /
-├── frontend/           # React 19 + Vite App
+├── app/                    # Next.js 15 Application
 │   ├── src/
-│   │   ├── components/ # shadcn/ui components
-│   │   ├── lib/        # Supabase client, utils
-│   │   └── pages/      # Client & Admin Dashboards
-│   └── ...
-├── backend/            # FastAPI Gateway
-│   ├── app/
-│   │   ├── routers/    # API Endpoints
-│   │   └── core/       # Config & Security
-│   └── ...
-├── worker/             # Python AI Agents (CrewAI)
-│   ├── agents/         # Agent definitions
-│   ├── tasks/          # Task definitions
-│   └── trigger/        # Trigger.dev jobs
-├── docs/               # Documentation
-└── docker-compose.yml  # Local Development Orchestration
+│   │   ├── app/            # App Router pages & layouts
+│   │   ├── components/     # shadcn/ui & custom components
+│   │   ├── sections/       # Page sections
+│   │   ├── hooks/          # Custom React hooks
+│   │   ├── lib/            # Utilities & Supabase client
+│   │   ├── utils/          # Helper functions
+│   │   ├── types/          # TypeScript type definitions
+│   │   └── views/          # View components
+│   ├── public/             # Static assets
+│   ├── next.config.ts      # Next.js configuration
+│   ├── tailwind.config.js  # Tailwind CSS configuration
+│   └── tsconfig.json       # TypeScript configuration
+├── docs/                   # Documentation
+└── .gitignore
 ```
 
 ## 3. تدفق البيانات (Data Flow)
-1.  **العميل (Frontend):** يرسل طلب "إنشاء مشروع" -> API Gateway.
-2.  **البوابة (API):** تتحقق من التوكن (Supabase Auth) -> تسجل الطلب في DB -> تدفع المهمة لـ Trigger.dev.
-3.  **العامل (Worker):** يلتقط المهمة -> يشغل وكلاء CrewAI (Gemini) -> يكتب النتيجة في Cloudflare R2 -> يحدث الحالة في Supabase.
-4.  **العميل (Frontend):** يتلقى تحديث لحظي (Realtime) باكتمال المهمة.
+1.  **العميل (Browser):** يرسل طلب → Next.js Server Components / API Routes.
+2.  **Next.js Server:** يتعامل مع الطلب (Auth, Data Fetching) → Supabase / External APIs.
+3.  **النتيجة:** Server Components ترسل HTML جاهز → Client Components تضيف التفاعلية.
+4.  **البيانات اللحظية:** Supabase Realtime للتحديثات الفورية.
+
+## 4. مبادئ التصميم
+- **Server Components أولاً:** لأداء أفضل وتقليل حجم JavaScript المرسل للعميل.
+- **Client Components عند الضرورة:** للتفاعلية (نماذج، أحداث، حالات) مع `"use client"`.
+- **Next.js Image Optimization:** لتحسين أداء الصور تلقائياً.
+- **TypeScript Strict Mode:** لضمان أمان الأنواع في جميع أنحاء المشروع.
+
+---
+*تم التحديث: 2026-02-11 — الانتقال الكامل إلى Next.js 15*
